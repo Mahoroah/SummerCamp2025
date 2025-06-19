@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -9,12 +8,9 @@ import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-public class Robot {
+public class NewBot {
 
-
-
-
-    // Ticks per Revolution is determined by doing motor's ticks/revolution * gearbox ratio
+    Telemetry telemetry;
     private static final double TICKS_PER_REVOLUTION = 435 * 1;
     // You should know how to calculate the circumference of a circle
     private static final double WHEEL_CIRCUMFERENCE = 4 * Math.PI;
@@ -24,79 +20,32 @@ public class Robot {
 
     private static final double TICKS_PER_INCH = TICKS_PER_REVOLUTION / WHEEL_CIRCUMFERENCE;
 
+    private DcMotor LDrive;
+    private DcMotor RDrive;
 
-    // Init statements for components
-    public final DcMotor LDrive;
-    public final DcMotor RDrive;
-    public IMU imu;
+    private IMU imu;
 
-//    public final DcMotor MotorAttachment;
-
-    // Constructor for the robot (The default configs of the components on all new instances of the robot when referenced)
-    public Robot(HardwareMap hardwareMap) {
-        // Left Wheel's Motor define statement
+    public NewBot(HardwareMap hardwareMap, Telemetry telem) {
         LDrive = hardwareMap.get(DcMotor.class, "LDrive");
-        // Right Wheel's motor define statement
         RDrive = hardwareMap.get(DcMotor.class, "RDrive");
 
-        // IMU define statement
-        imu = hardwareMap.get(IMU.class, "imu");
-
-        // The initialization of the gyros to refer to proper axis
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
-                    RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                    RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
-        )));
-
-        // Setting the default operating style
+        telemetry = telem;
         LDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Setting the default zero power behavior
         LDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    }
 
-    public Robot(HardwareMap hardwareMap, DcMotor motorAttachment) {
-        // Left Wheel's Motor define statement
-        LDrive = hardwareMap.get(DcMotor.class, "LDrive");
-        // Right Wheel's motor define statement
-        RDrive = hardwareMap.get(DcMotor.class, "RDrive");
-
-//        MotorAttachment = motorAttachment;
-//        motorAttachment = hardwareMap.get(DcMotor.class, "AddMotor");
-
-        // IMU define statement
         imu = hardwareMap.get(IMU.class, "imu");
-
-        // The initialization of the gyros to refer to proper axis
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
         )));
-
-        // Setting the default operating style
-        LDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        RDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//        MotorAttachment.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        // Setting the default zero power behavior
-        LDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        RDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        MotorAttachment.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
     }
 
-    //----------------------------------------------------------------------------------------------------------------------------\\
-    //---------------------------AFTER THIS LINE, THE ROBOT'S AUTONOMOUS FUNCTIONS WILL BE DEFINED -------------------------------\\
-    //----------------------------------------------------------------------------------------------------------------------------\\
-
-    // Hello how are you guys doing I hope youre doing well and I just want to wish you a good day and an amazing season gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
-
-
     public void driveDistance(double distance, double speed) {
-        // Special motor configurations for method
-        // Reset the internal encoders per action to
+
         RDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         LDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -104,22 +53,21 @@ public class Robot {
         LDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         RDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        double LTarget = LDrive.getCurrentPosition() + (distance * TICKS_PER_INCH);
+        double RTarget = RDrive.getCurrentPosition() + (distance * TICKS_PER_INCH);
 
-        // Define the target distance by doing distance (In inches) * TICKS_PER_INCH
-        double target = distance * TICKS_PER_INCH;
+        LDrive.setTargetPosition((int) LTarget);
+        RDrive.setTargetPosition((int) RTarget);
 
-        // Set the target positions to be the motor's target positions (Using type casting)
-        LDrive.setTargetPosition((int) target);
-        RDrive.setTargetPosition((int) target);
+        LDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        RDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        // Actionable loop to detect motor state
         while(LDrive.isBusy() && RDrive.isBusy()) {
-            // Set motors to proper speed
             LDrive.setPower(speed);
             RDrive.setPower(speed);
+            addTelemetry(telemetry);
         }
 
-        // Action finished and motors stopped
         LDrive.setPower(0);
         RDrive.setPower(0);
     }
@@ -134,16 +82,10 @@ public class Robot {
         telemetry.update();
 
     }
-
-    public void setMotorPower(double power) {
-
-    }
-
-    // Getting the Rotational axis of the IMU
     public double getYaw() {
         // returning the value in Degrees for proper tur    // Getting the Rotational axis of the IMU
-    // Getting the Rotational axis of the IMU
-    // Getting the Rotational axis of the IMU
+        // Getting the Rotational axis of the IMU
+        // Getting the Rotational axis of the IMU
 
         return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
     }
@@ -184,3 +126,4 @@ public class Robot {
     }
 
 }
+

@@ -22,8 +22,8 @@ public class TeleOpTemplate extends LinearOpMode {
         waitForStart();
 
         while(opModeIsActive()) {
-            double x = -gamepad1.left_stick_x;
-            double y = -gamepad1.left_stick_y;
+            double x = -gamepad1.right_stick_x;
+            double y = gamepad1.left_stick_y;
 
             double LPower = y + x;
             double RPower = y - x;
